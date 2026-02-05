@@ -103,6 +103,69 @@ function showMessage(text, type = "info") {
   }, 4000);
 }
 
+async function removeParticipant(activity, email, liElement) {
+  if (!confirm(`Remove ${email} from ${activity}?`)) return;
+  try {
+    const url = `/activities/${encodeURIComponent(activity)}/participants?email=${encodeURIComponent(email)}`;
+    const res = await fetch(url, { method: "DELETE" });
+    const body = await res.json();
+    if (!res.ok) {
+      showMessage(body.detail || "Failed to remove participant.", "error");
+      return;
+    }
+
+    // Update local cache
+    const idx = activitiesCache[activity]?.participants.indexOf(email);
+    if (idx > -1) activitiesCache[activity].participants.splice(idx, 1);
+
+    // Re-render participants section
+    const card = document.querySelector(`.activity-card[data-activity="${CSS.escape(activity)}"]`);
+    const participantsSection = card.querySelector(".participants");
+    participantsSection.innerHTML = "";
+    const participantsHeading = document.createElement("h5");
+    participantsHeading.textContent = "Participants";
+    participantsSection.appendChild(participantsHeading);
+    const remaining = activitiesCache[activity].participants;
+    if (!remaining || remaining.length === 0) {
+      const none = document.createElement("p");
+      none.className = "info";
+      none.textContent = "No participants yet.";
+      participantsSection.appendChild(none);
+    } else {
+      const ul = document.createElement("ul");
+      ul.className = "participants-list";
+      remaining.forEach((p) => {
+        const li = document.createElement("li");
+        li.className = "participant-item";
+        const span = document.createElement("span");
+        span.textContent = p;
+        const btn = document.createElement("button");
+        btn.className = "remove-participant";
+        btn.type = "button";
+        btn.setAttribute("aria-label", `Remove ${p}`);
+        btn.dataset.email = p;
+        btn.textContent = "🗑️";
+        btn.addEventListener("click", () => removeParticipant(activity, p, li));
+        li.appendChild(span);
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+      participantsSection.appendChild(ul);
+    }
+
+    // Update badge and select option
+    const badge = card.querySelector(".participant-count");
+    badge.textContent = `${activitiesCache[activity].participants.length} participant${activitiesCache[activity].participants.length !== 1 ? "s" : ""}`;
+    const opt = Array.from(activitySelectEl.options).find(o => o.value === activity);
+    if (opt) opt.textContent = `${activity} (${activitiesCache[activity].participants.length})`;
+
+    showMessage(body.message || "Removed participant.", "success");
+  } catch (err) {
+    console.error(err);
+    showMessage("An error occurred while removing participant.", "error");
+  }
+}
+
 function createActivityCard(name, data) {
   const container = document.createElement("div");
   container.className = "activity-card";
@@ -139,7 +202,18 @@ function createActivityCard(name, data) {
     ul.className = "participants-list";
     data.participants.forEach((p) => {
       const li = document.createElement("li");
-      li.textContent = p;
+      li.className = "participant-item";
+      const span = document.createElement("span");
+      span.textContent = p;
+      const btn = document.createElement("button");
+      btn.className = "remove-participant";
+      btn.type = "button";
+      btn.setAttribute("aria-label", `Remove ${p}`);
+      btn.dataset.email = p;
+      btn.textContent = "🗑️";
+      btn.addEventListener("click", () => removeParticipant(name, p, li));
+      li.appendChild(span);
+      li.appendChild(btn);
       ul.appendChild(li);
     });
     participantsSection.appendChild(ul);
@@ -221,7 +295,18 @@ signupForm.addEventListener("submit", async (e) => {
       ul.className = "participants-list";
       activitiesCache[activity].participants.forEach((p) => {
         const li = document.createElement("li");
-        li.textContent = p;
+        li.className = "participant-item";
+        const span = document.createElement("span");
+        span.textContent = p;
+        const btn = document.createElement("button");
+        btn.className = "remove-participant";
+        btn.type = "button";
+        btn.setAttribute("aria-label", `Remove ${p}`);
+        btn.dataset.email = p;
+        btn.textContent = "🗑️";
+        btn.addEventListener("click", () => removeParticipant(activity, p, li));
+        li.appendChild(span);
+        li.appendChild(btn);
         ul.appendChild(li);
       });
       participantsSection.appendChild(ul);

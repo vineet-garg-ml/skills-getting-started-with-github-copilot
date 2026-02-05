@@ -82,14 +82,36 @@ section h3 {
 }
 
 .participants-list {
-  list-style-type: disc;
-  padding-left: 20px;
+  list-style-type: none;
+  padding-left: 0;
   margin-top: 8px;
 }
 
+.participants-list .participant-item,
 .participants-list li {
   padding: 6px 0;
   color: #444;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.remove-participant {
+  background: transparent;
+  border: none;
+  color: #c62828;
+  cursor: pointer;
+  font-size: 16px;
+  margin-left: 8px;
+}
+
+.remove-participant:hover {
+  color: #b71c1c;
+}
+
+.remove-participant:focus {
+  outline: 2px solid #ffcccb;
+  border-radius: 4px;
 }
 
 .participant-count {
